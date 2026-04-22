@@ -111,8 +111,20 @@ followers and reset their `acted` flag. This is the "injury" step used
 when `σ` acts and thereby invalidates the work of lower-priority
 strategies.
 -/
-def initializeBelow (st : StageState) (σ : Node) : StageState := by
-  sorry
+def initializeBelow (st : StageState) (σ : Node) : StageState where
+  A := st.A
+  B := st.B
+  follower := fun τ => if σ.priorityLT τ then none else st.follower τ
+  acted := fun τ => if σ.priorityLT τ then false else st.acted τ
+  support := st.support.filter (fun τ => ¬ σ.priorityLT τ)
+  support_spec := by
+    intro τ hτ
+    by_cases hpτ : σ.priorityLT τ
+    · exact ⟨by simp [hpτ], by simp [hpτ]⟩
+    · have hτsup : τ ∉ st.support := fun h =>
+        hτ (Finset.mem_filter.mpr ⟨h, hpτ⟩)
+      exact ⟨by simp [hpτ, (st.support_spec τ hτsup).1],
+             by simp [hpτ, (st.support_spec τ hτsup).2]⟩
 
 /-! ### Monotonicity predicates -/
 
@@ -146,7 +158,8 @@ lemma le_of_markActed (st : StageState) (σ : Node) :
   ⟨Finset.Subset.refl _, Finset.Subset.refl _⟩
 
 lemma le_of_initializeBelow (st : StageState) (σ : Node) :
-    st ≤ st.initializeBelow σ := by sorry
+    st ≤ st.initializeBelow σ :=
+  ⟨Finset.Subset.refl _, Finset.Subset.refl _⟩
 
 /-! ### Fresh-follower witness
 
@@ -155,18 +168,35 @@ far and any element of `A ∪ B`, to pick a fresh follower when needed.
 This keeps followers disjoint from already-enumerated elements.
 -/
 
-/-- An upper bound on all "live" natural numbers in the state. Concretely,
-`max (A ∪ B ∪ {current followers}) + 1`. -/
-def freshBound (st : StageState) : ℕ := by sorry
+/-- An upper bound on all "live" natural numbers in the state: strictly
+greater than every enrolled element and every current follower. Uses
+`Finset.sup` with `id` (which returns `0` on the empty finset), adding
+the three bounds together to get a conservative but simple estimate. -/
+def freshBound (st : StageState) : ℕ :=
+  st.A.sup id + st.B.sup id +
+    st.support.sup (fun σ => (st.follower σ).getD 0) + 1
 
 lemma freshBound_gt_A {st : StageState} {x : ℕ} (hx : x ∈ st.A) :
-    x < st.freshBound := by sorry
+    x < st.freshBound := by
+  have h : x ≤ st.A.sup id := Finset.le_sup (f := id) hx
+  unfold freshBound; omega
 
 lemma freshBound_gt_B {st : StageState} {x : ℕ} (hx : x ∈ st.B) :
-    x < st.freshBound := by sorry
+    x < st.freshBound := by
+  have h : x ≤ st.B.sup id := Finset.le_sup (f := id) hx
+  unfold freshBound; omega
 
 lemma freshBound_gt_follower {st : StageState} {σ : Node} {x : ℕ}
-    (hx : st.follower σ = some x) : x < st.freshBound := by sorry
+    (hx : st.follower σ = some x) : x < st.freshBound := by
+  have hσsup : σ ∈ st.support := by
+    by_contra h
+    rw [(st.support_spec σ h).1] at hx
+    cases hx
+  have hle : x ≤ st.support.sup (fun σ => (st.follower σ).getD 0) := by
+    have := Finset.le_sup (f := fun σ => (st.follower σ).getD 0) hσsup
+    simp [hx] at this
+    exact this
+  unfold freshBound; omega
 
 /-! ### The visited node at a given stage
 

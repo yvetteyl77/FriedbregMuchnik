@@ -32,22 +32,22 @@ public abbrev extend (σ : Node) (b : Bool) : Node := σ ++ [b]
 public abbrev take (σ : Node) (n : ℕ) : Node := List.take n σ
 
 /-- `σ` is a (not-necessarily-strict) ancestor of `τ`. Unfolds to `List.IsPrefix`. -/
-public def IsPrefix (σ τ : Node) : Prop := σ <+: τ
+public abbrev IsPrefix (σ τ : Node) : Prop := σ <+: τ
 
 /-- `σ` is a strict ancestor of `τ`. -/
-public def IsStrictPrefix (σ τ : Node) : Prop := σ <+: τ ∧ σ ≠ τ
+public abbrev IsStrictPrefix (σ τ : Node) : Prop := σ <+: τ ∧ σ ≠ τ
 
 /--
 Lexicographic (leftmost-first) order on `Node`, inherited from the
 `LinearOrder (List Bool)` instance derived from `List.Lex (· < ·)`.
 -/
-public def lex (σ τ : Node) : Prop := σ < τ
+public abbrev lex (σ τ : Node) : Prop := σ < τ
 
 /--
 Priority order: `σ` has higher priority than `τ` iff either `σ` is a strict
 prefix of `τ` or `σ` is strictly to the left of `τ` lexicographically.
 -/
-public def priorityLT (σ τ : Node) : Prop := IsStrictPrefix σ τ ∨ lex σ τ
+public abbrev priorityLT (σ τ : Node) : Prop := IsStrictPrefix σ τ ∨ lex σ τ
 
 end Node
 
@@ -155,18 +155,18 @@ lemma priorityLT_trichotomy (σ τ : Node) :
 
 /-! ### Decidability -/
 
-instance : DecidableEq Node := inferInstanceAs (DecidableEq (List Bool))
+public instance : DecidableEq Node := inferInstanceAs (DecidableEq (List Bool))
 
-instance (σ τ : Node) : Decidable (IsPrefix σ τ) :=
+public instance (σ τ : Node) : Decidable (IsPrefix σ τ) :=
   inferInstanceAs (Decidable (σ <+: τ))
 
-instance (σ τ : Node) : Decidable (IsStrictPrefix σ τ) := by
+public instance (σ τ : Node) : Decidable (IsStrictPrefix σ τ) := by
   unfold IsStrictPrefix; infer_instance
 
-instance (σ τ : Node) : Decidable (lex σ τ) :=
+public instance (σ τ : Node) : Decidable (lex σ τ) :=
   inferInstanceAs (Decidable (σ < τ))
 
-instance (σ τ : Node) : Decidable (priorityLT σ τ) := by
+public instance (σ τ : Node) : Decidable (priorityLT σ τ) := by
   unfold priorityLT; infer_instance
 
 /-! ### Finiteness at each level -/
