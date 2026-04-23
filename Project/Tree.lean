@@ -97,8 +97,8 @@ Two prefixes of a common node are comparable.
 -/
 lemma IsPrefix.total_of_prefix {σ τ ρ : Node}
     (h1 : IsPrefix σ ρ) (h2 : IsPrefix τ ρ) :
-    IsPrefix σ τ ∨ IsPrefix τ σ := by
-  sorry
+    IsPrefix σ τ ∨ IsPrefix τ σ :=
+  List.prefix_or_prefix_of_prefix h1 h2
 
 /-! ### Strict prefix lemmas -/
 
@@ -133,7 +133,10 @@ lex case and the prefix case via the `LinearOrder` instance's
 -/
 lemma lex_trichotomy (σ τ : Node) :
     σ = τ ∨ IsStrictPrefix σ τ ∨ IsStrictPrefix τ σ ∨ lex σ τ ∨ lex τ σ := by
-  sorry
+  rcases lt_trichotomy σ τ with h | h | h
+  · exact Or.inr (Or.inr (Or.inr (Or.inl h)))
+  · exact Or.inl h
+  · exact Or.inr (Or.inr (Or.inr (Or.inr h)))
 
 /-! ### Priority order lemmas -/
 
@@ -142,16 +145,49 @@ lemma priorityLT_irrefl (σ : Node) : ¬ priorityLT σ σ := by
   · exact IsStrictPrefix.irrefl σ h
   · exact lex_irrefl σ h
 
+/-- A strict prefix is strictly lex-less than its extension. The proof is
+direct induction using the `nil` and `cons` constructors of `List.Lex`. -/
+private lemma lex_of_append_ne_nil (σ t : Node) :
+    ∀ _ : t ≠ [], σ < σ ++ t := by
+  induction σ with
+  | nil =>
+    intro ht
+    match t, ht with
+    | a :: _, _ => exact List.Lex.nil
+  | cons a σ' ih =>
+    intro ht
+    exact List.Lex.cons (ih ht)
+
+lemma lex_of_isStrictPrefix {σ τ : Node} (h : IsStrictPrefix σ τ) : lex σ τ := by
+  obtain ⟨⟨t, rfl⟩, hne⟩ := h
+  have ht_ne : t ≠ [] := fun hn => by subst hn; exact hne (by simp)
+  exact lex_of_append_ne_nil σ t ht_ne
+
+/-- On `Node`, priority-order coincides with lex-order: strict-prefix is
+already a case of `List.Lex` (`Lex.nil` covers it). Hence `priorityLT`
+inherits strict-order properties from the linear-order instance. -/
+lemma priorityLT_iff_lex (σ τ : Node) : priorityLT σ τ ↔ lex σ τ := by
+  refine ⟨?_, Or.inr⟩
+  rintro (h | h)
+  · exact lex_of_isStrictPrefix h
+  · exact h
+
 @[trans] lemma priorityLT_trans {σ τ ρ : Node}
     (h1 : priorityLT σ τ) (h2 : priorityLT τ ρ) : priorityLT σ ρ := by
-  sorry
+  rw [priorityLT_iff_lex] at h1 h2 ⊢
+  exact lex_trans h1 h2
 
 /--
 Trichotomy for the priority order.
 -/
 lemma priorityLT_trichotomy (σ τ : Node) :
     σ = τ ∨ priorityLT σ τ ∨ priorityLT τ σ := by
-  sorry
+  rcases lex_trichotomy σ τ with h | h | h | h | h
+  · exact Or.inl h
+  · exact Or.inr (Or.inl (Or.inl h))
+  · exact Or.inr (Or.inr (Or.inl h))
+  · exact Or.inr (Or.inl (Or.inr h))
+  · exact Or.inr (Or.inr (Or.inr h))
 
 /-! ### Decidability -/
 

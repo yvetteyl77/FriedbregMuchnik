@@ -20,7 +20,7 @@ stages. Tracks:
                (no follower, not acted). This ensures `StageState` has a
                finite description at every stage.
 -/
-structure StageState where
+public structure StageState where
   A : Finset ℕ
   B : Finset ℕ
   follower : Node → Option ℕ
@@ -31,7 +31,7 @@ structure StageState where
 namespace StageState
 
 /-- The empty / initial state: nothing enumerated, no followers, nothing acted. -/
-def empty : StageState where
+public def empty : StageState where
   A := ∅
   B := ∅
   follower := fun _ => none
@@ -51,15 +51,15 @@ Each returns a new state with the appropriate book-keeping update.
 -/
 
 /-- Add `x` to the set `A`. -/
-def enrollA (st : StageState) (x : ℕ) : StageState :=
+public def enrollA (st : StageState) (x : ℕ) : StageState :=
   { st with A := insert x st.A }
 
 /-- Add `x` to the set `B`. -/
-def enrollB (st : StageState) (x : ℕ) : StageState :=
+public def enrollB (st : StageState) (x : ℕ) : StageState :=
   { st with B := insert x st.B }
 
 /-- Assign a follower `x` to node `σ`. Overwrites any existing follower. -/
-def setFollower (st : StageState) (σ : Node) (x : ℕ) : StageState where
+public def setFollower (st : StageState) (σ : Node) (x : ℕ) : StageState where
   A := st.A
   B := st.B
   follower := Function.update st.follower σ (some x)
@@ -75,7 +75,7 @@ def setFollower (st : StageState) (σ : Node) (x : ℕ) : StageState where
     · exact (st.support_spec τ hτsup).2
 
 /-- Clear the follower at `σ`. -/
-def clearFollower (st : StageState) (σ : Node) : StageState where
+public def clearFollower (st : StageState) (σ : Node) : StageState where
   A := st.A
   B := st.B
   follower := Function.update st.follower σ none
@@ -91,7 +91,7 @@ def clearFollower (st : StageState) (σ : Node) : StageState where
             (st.support_spec τ hτ).2⟩
 
 /-- Mark `σ` as having acted. -/
-def markActed (st : StageState) (σ : Node) : StageState where
+public def markActed (st : StageState) (σ : Node) : StageState where
   A := st.A
   B := st.B
   follower := st.follower
@@ -111,7 +111,7 @@ followers and reset their `acted` flag. This is the "injury" step used
 when `σ` acts and thereby invalidates the work of lower-priority
 strategies.
 -/
-def initializeBelow (st : StageState) (σ : Node) : StageState where
+public def initializeBelow (st : StageState) (σ : Node) : StageState where
   A := st.A
   B := st.B
   follower := fun τ => if σ.priorityLT τ then none else st.follower τ
@@ -130,10 +130,10 @@ def initializeBelow (st : StageState) (σ : Node) : StageState where
 
 /-- `st₁` is a prefix of `st₂` in the enrollment sense: the RE sets have
 only grown. -/
-def LE (st₁ st₂ : StageState) : Prop :=
+public abbrev LE (st₁ st₂ : StageState) : Prop :=
   st₁.A ⊆ st₂.A ∧ st₁.B ⊆ st₂.B
 
-instance : Preorder StageState where
+public instance : Preorder StageState where
   le := LE
   le_refl st := ⟨Finset.Subset.refl _, Finset.Subset.refl _⟩
   le_trans _ _ _ h1 h2 :=
@@ -172,7 +172,7 @@ This keeps followers disjoint from already-enumerated elements.
 greater than every enrolled element and every current follower. Uses
 `Finset.sup` with `id` (which returns `0` on the empty finset), adding
 the three bounds together to get a conservative but simple estimate. -/
-def freshBound (st : StageState) : ℕ :=
+public def freshBound (st : StageState) : ℕ :=
   st.A.sup id + st.B.sup id +
     st.support.sup (fun σ => (st.follower σ).getD 0) + 1
 
@@ -207,7 +207,7 @@ strategy gets to act at stage `s`.
 -/
 
 /-- Walk of length `s` down the tree guided by `st.acted`. -/
-def visitedNode (st : StageState) : ℕ → Node
+public def visitedNode (st : StageState) : ℕ → Node
   | 0     => Node.root
   | s + 1 =>
     let σ := visitedNode st s
